@@ -34,7 +34,6 @@ class FilmList(ListView):
     def get_queryset(self):
         return Film.objects.filter(user=self.request.user)
 
-
 def check_username(request):
     username = request.POST.get('username')
     if get_user_model().objects.filter(username=username).exists():
@@ -51,5 +50,13 @@ def add_film(request):
     request.user.films.add(film)
 
     #return tamplate with new film
+    films = request.user.films.all()
+    return render(request, 'partials/film-list.html', {'films': films})
+
+def delete_film(request, pk):
+    # remove the film from the user`s list
+    request.user.films.remove(pk)
+
+    #return tamplate fragment
     films = request.user.films.all()
     return render(request, 'partials/film-list.html', {'films': films})
