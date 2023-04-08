@@ -1,5 +1,5 @@
 from django.http.response import HttpResponse, HttpResponsePermanentRedirect
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.views.generic import FormView, TemplateView
@@ -8,7 +8,7 @@ from django.views.generic.list import ListView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.http import require_http_methods
-
+from django.contrib import messages
 
 from films.forms import RegisterForm
 from films.models import Film
@@ -49,21 +49,32 @@ def check_username(request):
 def add_film(request):
     name = request.POST.get('filmname') #Name of atrribute name in form
 
-    film = Film.objects.create(name=name)
-
+    film = Film.objects.get_or_create(name=name)[0]
     # add film to user`s list
     request.user.films.add(film)
 
     #return tamplate with new film
     films = request.user.films.all()
+    messages.success(request, f'Added {name} to list of films')
     return render(request, 'partials/film-list.html', {'films': films})
 
 @login_required
 @require_http_methods(["DELETE"])
 def delete_film(request, pk):
-    # remove the film from the user`s list
     request.user.films.remove(pk)
-
-    #return tamplate fragment
     films = request.user.films.all()
     return render(request, 'partials/film-list.html', {'films': films})
+
+
+@login_required
+def search_film(request):
+    search_text = request.POST.get('search')
+    results = Film.objects.filter(name__icontains=search_text).exclude(
+        name__in = request.user.films.all().values_list('name', flat=True)#exclude films that user already has on his list
+    )
+    context = {'results': results}
+    return render(request, 'partials/search-results.html', context)
+
+@login_required
+def clear(request):
+    return HttpResponse("")
