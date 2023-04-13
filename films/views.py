@@ -104,3 +104,21 @@ def sort(request):
 
     return render(request, 'partials/film-list.html', {'films': films})
 
+@login_required
+def detail(request, pk):
+    userfilm = get_object_or_404(UserFilms, pk=pk)
+    context = {'userfilm': userfilm}
+    return render(request, 'partials/film-detail.html', context)
+
+@login_required
+def films_partial(request):
+    films = UserFilms.objects.filter(user=request.user)
+    return render(request, 'partials/film-list.html', {'films': films})
+
+@login_required
+def upload_photo(request, pk):
+    userfilm = get_object_or_404(UserFilms, pk=pk)
+    photo = request.FILES.get('photo')
+    userfilm.film.photo.save(photo.name, photo)
+    context = {'userfilm': userfilm}
+    return render(request, 'partials/film-detail.html', context)
